@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+env/
+.env
+*.log
+db.sqlite3
+
+# Node / SvelteKit
+node_modules/
+.svelte-kit/
+dist/
+build/
+.env
+*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+docs/

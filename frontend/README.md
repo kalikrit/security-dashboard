@@ -1,30 +1,42 @@
-# Security Analytics Dashboard
+# sv
 
-Дашборд информационной безопасности с графиками и метриками.
+Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
-## Стек
-- **Backend**: Django + Django-Ninja, PostgreSQL (SQLite для разработки)
-- **Frontend**: SvelteKit, TypeScript, Chart.js
-- **Деплой**: Render (бэкенд), Vercel (фронтенд)
+## Creating a project
 
-## Локальный запуск
+If you're seeing this, you've probably already done this step. Congrats!
 
-### Бэкенд
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py generate_incidents --count=500
-python manage.py runserver
+```sh
+# create a new project
+npx sv create my-app
 ```
 
-### Фронтенд
-```bash
-cd frontend
-npm install
+To recreate this project with the same configuration:
+
+```sh
+# recreate this project
+npx sv@0.15.3 create --template minimal --types ts --add prettier eslint --install npm frontend
+```
+
+## Developing
+
+Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+
+```sh
 npm run dev
+
+# or start the server and open the app in a new browser tab
+npm run dev -- --open
 ```
 
-Откройте http://localhost:5173
+## Building
+
+To create a production version of your app:
+
+```sh
+npm run build
+```
+
+You can preview the production build with `npm run preview`.
+
+> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.

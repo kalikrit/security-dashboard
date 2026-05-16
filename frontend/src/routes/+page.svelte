@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import LineChart from '$lib/components/LineChart.svelte';
+  import LiveLineChart from '$lib/components/LiveLineChart.svelte';
   import BarChart from '$lib/components/BarChart.svelte';
+  import LiveStats from '$lib/components/LiveStats.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -13,18 +14,12 @@
 <main>
   <h1>Security Analytics Dashboard</h1>
 
-  <!-- Карточки метрик -->
-  <div class="metrics">
-    <div class="card"><h3>Всего</h3><p>{summary.total}</p></div>
-    <div class="card high"><h3>High</h3><p>{summary.high}</p></div>
-    <div class="card medium"><h3>Medium</h3><p>{summary.medium}</p></div>
-    <div class="card low"><h3>Low</h3><p>{summary.low}</p></div>
-  </div>
+  <LiveStats />
 
   <div class="charts">
     <div class="chart">
       <h2>Динамика инцидентов</h2>
-      <LineChart labels={timeline.map(t => t.date)} dataPoints={timeline.map(t => t.count)} />
+      <LiveLineChart />
     </div>
     <div class="chart">
       <h2>Топ типов угроз</h2>

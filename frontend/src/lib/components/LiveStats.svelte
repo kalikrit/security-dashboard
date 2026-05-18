@@ -30,80 +30,43 @@
   });
 </script>
 
-<!-- Карточки с распределением по критичности -->
-<div class="metrics-grid">
-  <div class="metric-card high">
-    <h4>High</h4>
-    <div class="metric-value">{severityCounts.high}</div>
+<!-- Карточки метрик -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-t-4 border-red-500">
+    <h4 class="text-sm text-gray-500 dark:text-gray-400">High</h4>
+    <div class="text-2xl font-bold text-gray-900 dark:text-white">{severityCounts.high}</div>
   </div>
-  <div class="metric-card medium">
-    <h4>Medium</h4>
-    <div class="metric-value">{severityCounts.medium}</div>
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-t-4 border-yellow-500">
+    <h4 class="text-sm text-gray-500 dark:text-gray-400">Medium</h4>
+    <div class="text-2xl font-bold text-gray-900 dark:text-white">{severityCounts.medium}</div>
   </div>
-  <div class="metric-card low">
-    <h4>Low</h4>
-    <div class="metric-value">{severityCounts.low}</div>
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-t-4 border-green-500">
+    <h4 class="text-sm text-gray-500 dark:text-gray-400">Low</h4>
+    <div class="text-2xl font-bold text-gray-900 dark:text-white">{severityCounts.low}</div>
   </div>
-  <div class="metric-card total">
-    <h4>Total (последняя минута)</h4>
-    <div class="metric-value">{lastMinuteCount}</div>
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-t-4 border-blue-500">
+    <h4 class="text-sm text-gray-500 dark:text-gray-400">Total (последняя минута)</h4>
+    <div class="text-2xl font-bold text-gray-900 dark:text-white">{lastMinuteCount}</div>
   </div>
 </div>
 
-<!-- Блок с инцидентами в секунду -->
-<div class="live-stat">
-  <span class="label">Инцидентов за последнюю секунду:</span>
-  <span class="value">{lastSecondCount}</span>
+<!-- Два блока рядом -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+    <p class="text-gray-700 dark:text-gray-300">
+      <span class="font-medium">Инцидентов за последнюю секунду:</span>
+      <span class="text-2xl font-bold ml-2 text-indigo-600 dark:text-indigo-400">{lastSecondCount}</span>
+    </p>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
+    <h4 class="text-md font-semibold text-gray-800 dark:text-white mb-2">Топ типов за минуту</h4>
+    <ul class="space-y-1">
+      {#each Object.entries(topTypes) as [type, count]}
+        <li class="flex justify-between border-b border-gray-100 dark:border-gray-700 py-1">
+          <span class="text-gray-700 dark:text-gray-300">{type}</span>
+          <span class="font-semibold text-gray-900 dark:text-white">{count}</span>
+        </li>
+      {/each}
+    </ul>
+  </div>
 </div>
-
-<!-- Топ типов (можно оставить) -->
-<div class="top-types">
-  <h4>Топ типов за минуту</h4>
-  <ul>
-    {#each Object.entries(topTypes) as [type, count]}
-      <li><strong>{type}</strong>: {count}</li>
-    {/each}
-  </ul>
-</div>
-
-<style>
-  .metrics-grid {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
-  }
-  .metric-card {
-    flex: 1;
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 0.75rem;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  }
-  .metric-card.high { border-top: 4px solid #dc3545; }
-  .metric-card.medium { border-top: 4px solid #ffc107; }
-  .metric-card.low { border-top: 4px solid #28a745; }
-  .metric-card.total { border-top: 4px solid #17a2b8; }
-  .metric-card h4 {
-    margin: 0 0 0.5rem;
-    font-size: 0.9rem;
-    color: #555;
-  }
-  .metric-value {
-    font-size: 1.8rem;
-    font-weight: bold;
-  }
-  .live-stat {
-    margin: 1rem 0;
-    font-size: 1rem;
-  }
-  .live-stat .value {
-    font-weight: bold;
-    font-size: 1.2rem;
-    margin-left: 0.5rem;
-  }
-  .top-types {
-    margin-top: 1rem;
-  }
-</style>

@@ -1,3 +1,4 @@
+from typing import Optional
 import random
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -29,8 +30,8 @@ class IncidentListItemSchema(Schema):
     severity: str
     source_country: str
     status: str
-    cve_id: str = None
-    description: str = None
+    cve_id: Optional[str] = None
+    description: Optional[str] = None
 
 @router.get("/summary", response=SummarySchema)
 def get_summary(request):

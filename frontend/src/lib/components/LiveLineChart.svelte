@@ -1,23 +1,29 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import Chart from 'chart.js/auto';
+  import { fetchLiveStats } from '$lib/api/client';
 
   let canvas: HTMLCanvasElement;
   let chart: Chart;
   let history: number[] = $state([]);
-  let interval: ReturnType<typeof setInterval>;
+  let loading = $state(true);
+  let error = $state<string | null>(null);
+  let intervalId: ReturnType<typeof setInterval> | null = null;
 
   const MAX_POINTS = 60; // показываем последнюю минуту
 
   async function fetchValue() {
     try {
-      const res = await fetch('http://localhost:8000/api/incidents/live-stats');
-      const data = await res.json();
+      error = null;
+      const data = await fetchLiveStats();
       const newValue = data.last_second_count;
       history = [...history, newValue].slice(-MAX_POINTS);
     } catch (err) {
+      error = err instanceof Error ? err.message : 'Failed to fetch data';
       console.error('Failed to fetch live stats for chart', err);
       history = [...history, 0].slice(-MAX_POINTS);
+    } finally {
+      loading = false;
     }
   }
 
@@ -57,26 +63,30 @@
     chart.update('none');
   }
 
-  onMount(async () => {
+  onMount(() => {
     history = Array(MAX_POINTS).fill(0);
-    await fetchValue();
-    initChart();
+    fetchValue().then(() => initChart());
 
-    interval = setInterval(async () => {
+    intervalId = setInterval(async () => {
       await fetchValue();
       updateChart();
     }, 1000);
 
     return () => {
-      if (interval) clearInterval(interval);
+      if (intervalId) clearInterval(intervalId);
       if (chart) chart.destroy();
     };
   });
-
-  // $effect будет автоматически вызываться при изменении history
-  $effect(() => {
-    updateChart();
-  });
 </script>
 
-<canvas bind:this={canvas}></canvas>
+{#if loading}
+  <div class="flex items-center justify-center h-48">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+  </div>
+{:else if error}
+  <div class="bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded">
+    <strong>Error:</strong> {error}
+  </div>
+{:else}
+  <canvas bind:this={canvas}></canvas>
+{/if}

@@ -20,7 +20,7 @@
       severityCounts = data.severity_counts;
     } catch (err) {
       error = err instanceof Error ? err.message : 'Unknown error occurred';
-      console.error('Failed to fetch live stats', err);
+      // Ошибки уже логируются в client.ts с флагом silent, здесь не логируем
     } finally {
       loading = false;
     }

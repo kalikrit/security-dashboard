@@ -28,26 +28,46 @@ export interface IncidentListItem {
   description: string | null;
 }
 
+export interface LiveStatsData {
+  last_second_count: number;
+  last_minute_count: number;
+  top_types: Record<string, number>;
+  severity_counts: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+}
+
+async function handleResponse<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => 'Unknown error');
+    throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
+  }
+  return res.json();
+}
+
 export async function fetchSummary(): Promise<Summary> {
   const res = await fetch(`${API_BASE}/incidents/summary`);
-  if (!res.ok) throw new Error('Failed to fetch summary');
-  return res.json();
+  return handleResponse<Summary>(res);
 }
 
 export async function fetchTimeline(days: number = 7): Promise<TimelineItem[]> {
   const res = await fetch(`${API_BASE}/incidents/timeline?days=${days}`);
-  if (!res.ok) throw new Error('Failed to fetch timeline');
-  return res.json();
+  return handleResponse<TimelineItem[]>(res);
 }
 
 export async function fetchTopTypes(limit: number = 5): Promise<TopTypeItem[]> {
   const res = await fetch(`${API_BASE}/incidents/top-types?limit=${limit}`);
-  if (!res.ok) throw new Error('Failed to fetch top types');
-  return res.json();
+  return handleResponse<TopTypeItem[]>(res);
 }
 
 export async function fetchIncidents(page: number = 1, limit: number = 20): Promise<IncidentListItem[]> {
   const res = await fetch(`${API_BASE}/incidents/list?page=${page}&limit=${limit}`);
-  if (!res.ok) throw new Error('Failed to fetch incidents');
-  return res.json();
+  return handleResponse<IncidentListItem[]>(res);
+}
+
+export async function fetchLiveStats(): Promise<LiveStatsData> {
+  const res = await fetch(`${API_BASE}/incidents/live-stats`);
+  return handleResponse<LiveStatsData>(res);
 }

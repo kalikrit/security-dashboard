@@ -41,6 +41,11 @@ export interface LiveStatsData {
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
+    // При ошибке соединения (backend недоступен) не выбрасываем ошибку,
+    // а возвращаем дефолтные значения для graceful degradation
+    if (res.type === 'opaque' || !res.status) {
+      throw new Error('Backend unavailable');
+    }
     const errorText = await res.text().catch(() => 'Unknown error');
     throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
   }
@@ -48,26 +53,56 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export async function fetchSummary(): Promise<Summary> {
-  const res = await fetch(`${API_BASE}/incidents/summary`);
-  return handleResponse<Summary>(res);
+  try {
+    const res = await fetch(`${API_BASE}/incidents/summary`);
+    return handleResponse<Summary>(res);
+  } catch (err) {
+    console.warn('fetchSummary failed, returning defaults:', err);
+    return { total: 0, high: 0, medium: 0, low: 0 };
+  }
 }
 
 export async function fetchTimeline(days: number = 7): Promise<TimelineItem[]> {
-  const res = await fetch(`${API_BASE}/incidents/timeline?days=${days}`);
-  return handleResponse<TimelineItem[]>(res);
+  try {
+    const res = await fetch(`${API_BASE}/incidents/timeline?days=${days}`);
+    return handleResponse<TimelineItem[]>(res);
+  } catch (err) {
+    console.warn('fetchTimeline failed, returning defaults:', err);
+    return [];
+  }
 }
 
 export async function fetchTopTypes(limit: number = 5): Promise<TopTypeItem[]> {
-  const res = await fetch(`${API_BASE}/incidents/top-types?limit=${limit}`);
-  return handleResponse<TopTypeItem[]>(res);
+  try {
+    const res = await fetch(`${API_BASE}/incidents/top-types?limit=${limit}`);
+    return handleResponse<TopTypeItem[]>(res);
+  } catch (err) {
+    console.warn('fetchTopTypes failed, returning defaults:', err);
+    return [];
+  }
 }
 
 export async function fetchIncidents(page: number = 1, limit: number = 20): Promise<IncidentListItem[]> {
-  const res = await fetch(`${API_BASE}/incidents/list?page=${page}&limit=${limit}`);
-  return handleResponse<IncidentListItem[]>(res);
+  try {
+    const res = await fetch(`${API_BASE}/incidents/list?page=${page}&limit=${limit}`);
+    return handleResponse<IncidentListItem[]>(res);
+  } catch (err) {
+    console.warn('fetchIncidents failed, returning defaults:', err);
+    return [];
+  }
 }
 
 export async function fetchLiveStats(): Promise<LiveStatsData> {
-  const res = await fetch(`${API_BASE}/incidents/live-stats`);
-  return handleResponse<LiveStatsData>(res);
+  try {
+    const res = await fetch(`${API_BASE}/incidents/live-stats`);
+    return handleResponse<LiveStatsData>(res);
+  } catch (err) {
+    console.warn('fetchLiveStats failed, returning defaults:', err);
+    return {
+      last_second_count: 0,
+      last_minute_count: 0,
+      top_types: {},
+      severity_counts: { high: 0, medium: 0, low: 0 }
+    };
+  }
 }

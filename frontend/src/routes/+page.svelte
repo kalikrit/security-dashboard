@@ -4,6 +4,7 @@
   import LiveLineChart from '$lib/components/LiveLineChart.svelte';
   import LiveTopTypesChart from '$lib/components/LiveTopTypesChart.svelte';
   
+  // PageData теперь пустой, т.к. данные загружаются в компонентах
   let { data }: { data: PageData } = $props();
 </script>
 

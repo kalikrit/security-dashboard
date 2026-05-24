@@ -93,10 +93,17 @@ async function handleResponse<T>(res: Response, endpoint: string): Promise<T> {
 
 async function safeFetch<T>(url: string, endpoint: string, defaultData: T, silent: boolean = false): Promise<T> {
   try {
-    const res = await fetch(url);
+    const res = await fetch(url).catch(err => {
+      if (!silent) {
+        console.warn(`Failed to fetch ${endpoint}:`, err);
+      }
+      throw err;
+    });
     return await handleResponse<T>(res, endpoint);
   } catch (err) {
-    if (!silent) {
+    // Ошибка уже обработана в catch выше или в handleResponse
+    // Если silent=true, не логируем повторяющиеся ошибки
+    if (!silent && !(err instanceof Error)) {
       console.warn(`Failed to fetch ${endpoint}:`, err);
     }
     return defaultData;

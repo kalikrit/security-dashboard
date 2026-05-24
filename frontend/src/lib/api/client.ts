@@ -45,15 +45,6 @@ let connectionErrorShown = false;
 
 async function handleResponse<T>(res: Response, endpoint: string): Promise<T> {
   if (!res.ok) {
-    // При ошибке соединения (backend недоступен)
-    if (res.type === 'opaque' || !res.status) {
-      backendAvailable = false;
-      if (!connectionErrorShown) {
-        console.warn(`Backend unavailable for ${endpoint}. Using cached/default data.`);
-        connectionErrorShown = true;
-      }
-      throw new Error('Backend unavailable');
-    }
     const errorText = await res.text().catch(() => 'Unknown error');
     throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
   }
@@ -66,54 +57,46 @@ async function handleResponse<T>(res: Response, endpoint: string): Promise<T> {
   return res.json();
 }
 
-export async function fetchSummary(): Promise<Summary> {
+async function safeFetch<T>(url: string, endpoint: string, defaultData: T): Promise<T> {
   try {
-    const res = await fetch(`${API_BASE}/incidents/summary`);
-    return handleResponse<Summary>(res, 'summary');
+    const res = await fetch(url);
+    return await handleResponse<T>(res, endpoint);
   } catch (err) {
-    return { total: 0, high: 0, medium: 0, low: 0 };
+    // Ошибка соединения (backend недоступен)
+    if (!backendAvailable) {
+      backendAvailable = false;
+      if (!connectionErrorShown) {
+        console.warn(`Backend unavailable for ${endpoint}. Using cached/default data.`);
+        connectionErrorShown = true;
+      }
+    }
+    return defaultData;
   }
+}
+
+export async function fetchSummary(): Promise<Summary> {
+  return safeFetch(`${API_BASE}/incidents/summary`, 'summary', { total: 0, high: 0, medium: 0, low: 0 });
 }
 
 export async function fetchTimeline(days: number = 7): Promise<TimelineItem[]> {
-  try {
-    const res = await fetch(`${API_BASE}/incidents/timeline?days=${days}`);
-    return handleResponse<TimelineItem[]>(res, 'timeline');
-  } catch (err) {
-    return [];
-  }
+  return safeFetch(`${API_BASE}/incidents/timeline?days=${days}`, 'timeline', []);
 }
 
 export async function fetchTopTypes(limit: number = 5): Promise<TopTypeItem[]> {
-  try {
-    const res = await fetch(`${API_BASE}/incidents/top-types?limit=${limit}`);
-    return handleResponse<TopTypeItem[]>(res, 'top-types');
-  } catch (err) {
-    return [];
-  }
+  return safeFetch(`${API_BASE}/incidents/top-types?limit=${limit}`, 'top-types', []);
 }
 
 export async function fetchIncidents(page: number = 1, limit: number = 20): Promise<IncidentListItem[]> {
-  try {
-    const res = await fetch(`${API_BASE}/incidents/list?page=${page}&limit=${limit}`);
-    return handleResponse<IncidentListItem[]>(res, 'incidents');
-  } catch (err) {
-    return [];
-  }
+  return safeFetch(`${API_BASE}/incidents/list?page=${page}&limit=${limit}`, 'incidents', []);
 }
 
 export async function fetchLiveStats(): Promise<LiveStatsData> {
-  try {
-    const res = await fetch(`${API_BASE}/incidents/live-stats`);
-    return handleResponse<LiveStatsData>(res, 'live-stats');
-  } catch (err) {
-    return {
-      last_second_count: 0,
-      last_minute_count: 0,
-      top_types: {},
-      severity_counts: { high: 0, medium: 0, low: 0 }
-    };
-  }
+  return safeFetch(`${API_BASE}/incidents/live-stats`, 'live-stats', {
+    last_second_count: 0,
+    last_minute_count: 0,
+    top_types: {},
+    severity_counts: { high: 0, medium: 0, low: 0 }
+  });
 }
 
 // Функция для получения текущего статуса подключения

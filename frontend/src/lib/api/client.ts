@@ -41,18 +41,52 @@ export interface LiveStatsData {
 
 // Глобальное состояние для отслеживания статуса подключения
 let backendAvailable = true;
-let connectionErrorShown = false;
+let lastHealthCheckFailed = false;
+
+// Функция проверки здоровья бэкенда (использует GET вместо HEAD)
+export async function checkBackendHealth(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    
+    const res = await fetch(`${API_BASE}/incidents/summary`, {
+      method: 'GET',
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (res.ok) {
+      if (!backendAvailable) {
+        console.log('Backend connection restored');
+      }
+      backendAvailable = true;
+      lastHealthCheckFailed = false;
+      return true;
+    } else {
+      backendAvailable = false;
+      return false;
+    }
+  } catch (err) {
+    // Показываем предупреждение только при изменении статуса
+    if (!lastHealthCheckFailed) {
+      console.warn('Backend health check failed');
+      lastHealthCheckFailed = true;
+    }
+    backendAvailable = false;
+    return false;
+  }
+}
+
+// Функция для получения текущего статуса подключения
+export function isBackendAvailable(): boolean {
+  return backendAvailable;
+}
 
 async function handleResponse<T>(res: Response, endpoint: string): Promise<T> {
   if (!res.ok) {
     const errorText = await res.text().catch(() => 'Unknown error');
     throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
-  }
-  // Если запрос успешен, восстанавливаем статус
-  if (!backendAvailable) {
-    backendAvailable = true;
-    connectionErrorShown = false;
-    console.log(`Backend connection restored for ${endpoint}`);
   }
   return res.json();
 }
@@ -62,14 +96,6 @@ async function safeFetch<T>(url: string, endpoint: string, defaultData: T): Prom
     const res = await fetch(url);
     return await handleResponse<T>(res, endpoint);
   } catch (err) {
-    // Ошибка соединения (backend недоступен)
-    if (!backendAvailable) {
-      backendAvailable = false;
-      if (!connectionErrorShown) {
-        console.warn(`Backend unavailable for ${endpoint}. Using cached/default data.`);
-        connectionErrorShown = true;
-      }
-    }
     return defaultData;
   }
 }
@@ -97,15 +123,4 @@ export async function fetchLiveStats(): Promise<LiveStatsData> {
     top_types: {},
     severity_counts: { high: 0, medium: 0, low: 0 }
   });
-}
-
-// Функция для получения текущего статуса подключения
-export function isBackendAvailable(): boolean {
-  return backendAvailable;
-}
-
-// Функция для сброса состояния (например, при переподключении)
-export function resetConnectionStatus(): void {
-  backendAvailable = true;
-  connectionErrorShown = false;
 }

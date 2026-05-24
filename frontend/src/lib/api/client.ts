@@ -91,11 +91,14 @@ async function handleResponse<T>(res: Response, endpoint: string): Promise<T> {
   return res.json();
 }
 
-async function safeFetch<T>(url: string, endpoint: string, defaultData: T): Promise<T> {
+async function safeFetch<T>(url: string, endpoint: string, defaultData: T, silent: boolean = false): Promise<T> {
   try {
     const res = await fetch(url);
     return await handleResponse<T>(res, endpoint);
   } catch (err) {
+    if (!silent) {
+      console.warn(`Failed to fetch ${endpoint}:`, err);
+    }
     return defaultData;
   }
 }
@@ -122,5 +125,5 @@ export async function fetchLiveStats(): Promise<LiveStatsData> {
     last_minute_count: 0,
     top_types: {},
     severity_counts: { high: 0, medium: 0, low: 0 }
-  });
+  }, true); // silent=true для периодических запросов
 }

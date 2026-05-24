@@ -9,21 +9,32 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
   let intervalId: ReturnType<typeof setInterval> | null = null;
+  let isFetching = $state(true);
 
-  const MAX_POINTS = 60; // показываем последнюю минуту
+  const MAX_POINTS = 60;
 
   async function fetchValue() {
+    if (!isFetching) return;
+
     try {
       error = null;
       const data = await fetchLiveStats();
       const newValue = data.last_second_count;
       history = [...history, newValue].slice(-MAX_POINTS);
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to fetch data';
-      console.error('Failed to fetch live stats for chart', err);
+      if (isFetching) {
+        isFetching = false;
+        error = err instanceof Error ? err.message : 'Failed to fetch data';
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
+      // Добавляем 0, чтобы график не дёргался
       history = [...history, 0].slice(-MAX_POINTS);
     } finally {
       loading = false;
+      updateChart();
     }
   }
 
@@ -63,13 +74,25 @@
     chart.update('none');
   }
 
+  function retry() {
+    if (intervalId) clearInterval(intervalId);
+    isFetching = true;
+    error = null;
+    loading = true;
+    history = Array(MAX_POINTS).fill(0);
+    fetchValue().then(() => {
+      if (!chart) initChart(); else updateChart();
+      intervalId = setInterval(() => {
+        fetchValue();
+      }, 1000);
+    });
+  }
+
   onMount(() => {
     history = Array(MAX_POINTS).fill(0);
     fetchValue().then(() => initChart());
-
-    intervalId = setInterval(async () => {
-      await fetchValue();
-      updateChart();
+    intervalId = setInterval(() => {
+      fetchValue();
     }, 1000);
 
     return () => {
@@ -86,6 +109,12 @@
 {:else if error}
   <div class="bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded">
     <strong>Error:</strong> {error}
+    <button 
+      onclick={retry}
+      class="ml-4 underline hover:text-red-900 dark:hover:text-red-100"
+    >
+      Retry
+    </button>
   </div>
 {:else}
   <canvas bind:this={canvas}></canvas>

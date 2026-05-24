@@ -9,15 +9,25 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
   let intervalId: ReturnType<typeof setInterval> | null = null;
+  let isFetching = $state(true);   // флаг, разрешающий запросы
 
-  async function fetchTopTypes() {
+  async function fetchData() {
+    if (!isFetching) return;
+
     try {
       error = null;
       const data = await fetchLiveStats();
       topTypes = data.top_types;
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to fetch data';
-      console.error('Failed to fetch top types for bar chart', err);
+      // при ошибке останавливаем интервал и запрещаем дальнейшие запросы
+      if (isFetching) {
+        isFetching = false;
+        error = err instanceof Error ? err.message : 'Failed to fetch data';
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
     } finally {
       loading = false;
     }
@@ -61,12 +71,29 @@
     chart.update('none');
   }
 
+  // Ручной перезапуск (по кнопке)
+  function retry() {
+    if (intervalId) clearInterval(intervalId);
+    isFetching = true;
+    error = null;
+    loading = true;
+    fetchData().then(() => {
+      updateChart();
+      // Запускаем интервал заново
+      intervalId = setInterval(() => {
+        fetchData();
+        updateChart();
+      }, 1000);
+    });
+  }
+
   onMount(() => {
-    fetchTopTypes().then(() => initChart());
-    intervalId = setInterval(async () => {
-      await fetchTopTypes();
+    fetchData().then(() => initChart());
+    intervalId = setInterval(() => {
+      fetchData();
       updateChart();
     }, 1000);
+
     return () => {
       if (intervalId) clearInterval(intervalId);
       if (chart) chart.destroy();
@@ -81,6 +108,12 @@
 {:else if error}
   <div class="bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded">
     <strong>Error:</strong> {error}
+    <button 
+      onclick={retry}
+      class="ml-4 underline hover:text-red-900 dark:hover:text-red-100"
+    >
+      Retry
+    </button>
   </div>
 {:else}
   <canvas bind:this={canvas}></canvas>

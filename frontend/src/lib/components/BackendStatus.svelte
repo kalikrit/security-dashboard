@@ -1,37 +1,15 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { checkBackendHealth } from '$lib/api/client';
-  
-  let available = $state(true);
-  let checkInterval: ReturnType<typeof setInterval>;
-  
-  async function checkBackendConnection(): Promise<void> {
-    const isHealthy = await checkBackendHealth();
-    available = isHealthy;
-  }
-  
-  onMount(() => {
-    // Первоначальная проверка
-    checkBackendConnection();
-    
-    // Проверяем статус каждые 5 секунд
-    checkInterval = setInterval(() => {
-      checkBackendConnection();
-    }, 5000);
-
-    return () => {
-      clearInterval(checkInterval);
-    };
-  });
+  import { error, retryPolling } from '$lib/stores/liveDataStore';
 </script>
 
-{#if !available}
+{#if $error}
   <div class="backend-status offline">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
       <line x1="12" y1="2" x2="12" y2="12"></line>
     </svg>
     <span>Бэкенд недоступен. Отображаются последние известные данные.</span>
+    <button onclick={retryPolling} class="ml-4 underline">Retry</button>
   </div>
 {:else}
   <div class="backend-status online">

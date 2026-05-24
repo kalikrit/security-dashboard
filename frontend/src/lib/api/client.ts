@@ -104,6 +104,7 @@ async function safeFetch<T>(url: string, endpoint: string, defaultData: T, silen
   }
 }
 
+
 export async function fetchSummary(): Promise<Summary> {
   return safeFetch(`${API_BASE}/incidents/summary`, 'summary', { total: 0, high: 0, medium: 0, low: 0 });
 }
@@ -126,5 +127,5 @@ export async function fetchLiveStats(): Promise<LiveStatsData> {
     last_minute_count: 0,
     top_types: {},
     severity_counts: { high: 0, medium: 0, low: 0 }
-  }, true); // silent=true для периодических запросов
+  }); 
 }

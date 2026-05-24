@@ -39,15 +39,29 @@ export interface LiveStatsData {
   };
 }
 
-async function handleResponse<T>(res: Response): Promise<T> {
+// Глобальное состояние для отслеживания статуса подключения
+let backendAvailable = true;
+let connectionErrorShown = false;
+
+async function handleResponse<T>(res: Response, endpoint: string): Promise<T> {
   if (!res.ok) {
-    // При ошибке соединения (backend недоступен) не выбрасываем ошибку,
-    // а возвращаем дефолтные значения для graceful degradation
+    // При ошибке соединения (backend недоступен)
     if (res.type === 'opaque' || !res.status) {
+      backendAvailable = false;
+      if (!connectionErrorShown) {
+        console.warn(`Backend unavailable for ${endpoint}. Using cached/default data.`);
+        connectionErrorShown = true;
+      }
       throw new Error('Backend unavailable');
     }
     const errorText = await res.text().catch(() => 'Unknown error');
     throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
+  }
+  // Если запрос успешен, восстанавливаем статус
+  if (!backendAvailable) {
+    backendAvailable = true;
+    connectionErrorShown = false;
+    console.log(`Backend connection restored for ${endpoint}`);
   }
   return res.json();
 }
@@ -55,9 +69,8 @@ async function handleResponse<T>(res: Response): Promise<T> {
 export async function fetchSummary(): Promise<Summary> {
   try {
     const res = await fetch(`${API_BASE}/incidents/summary`);
-    return handleResponse<Summary>(res);
+    return handleResponse<Summary>(res, 'summary');
   } catch (err) {
-    console.warn('fetchSummary failed, returning defaults:', err);
     return { total: 0, high: 0, medium: 0, low: 0 };
   }
 }
@@ -65,9 +78,8 @@ export async function fetchSummary(): Promise<Summary> {
 export async function fetchTimeline(days: number = 7): Promise<TimelineItem[]> {
   try {
     const res = await fetch(`${API_BASE}/incidents/timeline?days=${days}`);
-    return handleResponse<TimelineItem[]>(res);
+    return handleResponse<TimelineItem[]>(res, 'timeline');
   } catch (err) {
-    console.warn('fetchTimeline failed, returning defaults:', err);
     return [];
   }
 }
@@ -75,9 +87,8 @@ export async function fetchTimeline(days: number = 7): Promise<TimelineItem[]> {
 export async function fetchTopTypes(limit: number = 5): Promise<TopTypeItem[]> {
   try {
     const res = await fetch(`${API_BASE}/incidents/top-types?limit=${limit}`);
-    return handleResponse<TopTypeItem[]>(res);
+    return handleResponse<TopTypeItem[]>(res, 'top-types');
   } catch (err) {
-    console.warn('fetchTopTypes failed, returning defaults:', err);
     return [];
   }
 }
@@ -85,9 +96,8 @@ export async function fetchTopTypes(limit: number = 5): Promise<TopTypeItem[]> {
 export async function fetchIncidents(page: number = 1, limit: number = 20): Promise<IncidentListItem[]> {
   try {
     const res = await fetch(`${API_BASE}/incidents/list?page=${page}&limit=${limit}`);
-    return handleResponse<IncidentListItem[]>(res);
+    return handleResponse<IncidentListItem[]>(res, 'incidents');
   } catch (err) {
-    console.warn('fetchIncidents failed, returning defaults:', err);
     return [];
   }
 }
@@ -95,9 +105,8 @@ export async function fetchIncidents(page: number = 1, limit: number = 20): Prom
 export async function fetchLiveStats(): Promise<LiveStatsData> {
   try {
     const res = await fetch(`${API_BASE}/incidents/live-stats`);
-    return handleResponse<LiveStatsData>(res);
+    return handleResponse<LiveStatsData>(res, 'live-stats');
   } catch (err) {
-    console.warn('fetchLiveStats failed, returning defaults:', err);
     return {
       last_second_count: 0,
       last_minute_count: 0,
@@ -105,4 +114,15 @@ export async function fetchLiveStats(): Promise<LiveStatsData> {
       severity_counts: { high: 0, medium: 0, low: 0 }
     };
   }
+}
+
+// Функция для получения текущего статуса подключения
+export function isBackendAvailable(): boolean {
+  return backendAvailable;
+}
+
+// Функция для сброса состояния (например, при переподключении)
+export function resetConnectionStatus(): void {
+  backendAvailable = true;
+  connectionErrorShown = false;
 }

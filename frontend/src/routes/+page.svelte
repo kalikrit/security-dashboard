@@ -3,6 +3,7 @@
   import LiveStats from '$lib/components/LiveStats.svelte';
   import LiveLineChart from '$lib/components/LiveLineChart.svelte';
   import LiveTopTypesChart from '$lib/components/LiveTopTypesChart.svelte';
+  import BackendStatus from '$lib/components/BackendStatus.svelte';
   
   // PageData теперь пустой, т.к. данные загружаются в компонентах
   let { data }: { data: PageData } = $props();
@@ -13,6 +14,11 @@
   <h1 class="text-4xl md:text-5xl font-extrabold text-center text-gray-900 dark:text-white mb-10 tracking-tight">
     Security Analytics Dashboard
   </h1>
+
+  <!-- Статус подключения к бэкенду -->
+  <div class="flex justify-center mb-6">
+    <BackendStatus />
+  </div>
 
   <!-- Живые метрики -->
   <LiveStats />

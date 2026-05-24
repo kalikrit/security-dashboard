@@ -13,24 +13,24 @@ export const liveStatsLoading: Writable<boolean> = writable(true);
 export const liveStatsError: Writable<string | null> = writable(null);
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
-let subscribersCount = 0;
+let isRunning = false;
+
+async function update() {
+  try {
+    liveStatsError.set(null);
+    const data = await fetchLiveStats();
+    liveStats.set(data);
+    liveStatsLoading.set(false);
+  } catch (err) {
+    liveStatsError.set(err instanceof Error ? err.message : 'Failed to fetch live stats');
+    liveStatsLoading.set(false);
+  }
+}
 
 export function startLiveStatsUpdates() {
-  if (intervalId) return; // Уже запущено
+  if (isRunning) return;
   
-  async function update() {
-    try {
-      liveStatsError.set(null);
-      const data = await fetchLiveStats();
-      liveStats.set(data);
-      liveStatsLoading.set(false);
-    } catch (err) {
-      liveStatsError.set(err instanceof Error ? err.message : 'Failed to fetch live stats');
-      liveStatsLoading.set(false);
-      // Ошибки уже логируются в client.ts с флагом silent
-    }
-  }
-  
+  isRunning = true;
   update(); // Первый запрос сразу
   intervalId = setInterval(update, 1000);
 }
@@ -40,22 +40,8 @@ export function stopLiveStatsUpdates() {
     clearInterval(intervalId);
     intervalId = null;
   }
+  isRunning = false;
 }
 
-// Автоматический запуск при первой подписке и остановка когда подписчиков нет
-export const subscribe = ((fn) => {
-  subscribersCount++;
-  if (subscribersCount === 1) {
-    startLiveStatsUpdates();
-  }
-  
-  const unsubscribe = liveStats.subscribe(fn);
-  
-  return () => {
-    unsubscribe();
-    subscribersCount--;
-    if (subscribersCount === 0) {
-      stopLiveStatsUpdates();
-    }
-  };
-}) as typeof liveStats.subscribe;
+// Запускаем обновления сразу при импорте модуля
+startLiveStatsUpdates();

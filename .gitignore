@@ -1,59 +1,51 @@
 ```
-# Dependencies
-node_modules/
-
-# Build artifacts
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.o
+*.obj
 dist/
 build/
 target/
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
+# Dependencies
 .venv/
-.ENV
-.ENV.*
-.mypy_cache/
-.pytest_cache/
-.coverage
-coverage/
+venv/
+node_modules/
+.julia/
+zig*/
+.cargo/
+.go/
 
-# Logs
+# Logs and temp files
 *.log
+*.tmp
+*.swp
+*.swo
 
-# Environment specific
+# Environment
 .env
 .env.local
 .env.*
-!.env.example
 
-# IDE
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
-*.tmp
 
-# OS
+# OS specific
 .DS_Store
 Thumbs.db
 
-# Compiled files
-*.o
-*.obj
-*.so
-*.a
-*.dll
-*.exe
-*.out
-*.class
+# Testing and coverage
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+.mypy_cache/
 
-# Compressed
+# Compressed files
 *.zip
 *.gz
 *.tar
@@ -76,28 +68,4 @@ Thumbs.db
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-
-# Coverage
-coverage/
-htmlcov/
-
-# Gradle
-.gradle/
-build/
-
-# Node
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# SvelteKit
-.svelte-kit/
-.output/
-
-# Vite
-.vite/
-
-# Temporary files
-*.tmp
-*.temp
 ```

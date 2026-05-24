@@ -1,31 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { resetConnectionStatus } from '$lib/api/client';
+  import { checkBackendHealth } from '$lib/api/client';
   
   let available = $state(true);
   let checkInterval: ReturnType<typeof setInterval>;
   
   async function checkBackendConnection(): Promise<void> {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
-      
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/incidents/summary`, {
-        method: 'HEAD',
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (res.ok) {
-        resetConnectionStatus();
-        available = true;
-      } else {
-        available = false;
-      }
-    } catch (err) {
-      available = false;
-    }
+    const isHealthy = await checkBackendHealth();
+    available = isHealthy;
   }
   
   onMount(() => {

@@ -38,4 +38,4 @@ htmlcov/
 *.tar.gz
 *.whl
 *.egg-info/
-```
+backend/db.sqlite3

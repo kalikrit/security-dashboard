@@ -1,5 +1,15 @@
 <script lang="ts">
   import { error, retryPolling } from '$lib/stores/liveDataStore';
+  let retrying = $state(false);
+
+  function handleRetry() {
+    if (retrying) return;
+    retrying = true;
+    retryPolling();
+    setTimeout(() => {
+      retrying = false;
+    }, 5000);
+  }
 </script>
 
 {#if $error}
@@ -8,8 +18,10 @@
       <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
       <line x1="12" y1="2" x2="12" y2="12"></line>
     </svg>
-    <span>Бэкенд недоступен. Отображаются последние известные данные.</span>
-    <button onclick={retryPolling} class="ml-4 underline">Retry</button>
+    <span>Бэкенд недоступен.</span>
+    <button onclick={handleRetry} disabled={retrying}>
+      {retrying ? 'Повторная попытка...' : 'Retry'}
+    </button>
   </div>
 {:else}
   <div class="backend-status online">
@@ -46,5 +58,10 @@
 
   .backend-status svg {
     flex-shrink: 0;
+  }
+
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 </style>

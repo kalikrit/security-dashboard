@@ -6,30 +6,14 @@
   let canvas: HTMLCanvasElement;
   let chart: Chart;
   let history: number[] = [];
-  let intervalId: ReturnType<typeof setInterval> | null = null;
-  let isPollingActive = true;
   const MAX_POINTS = 60;
-
-  async function fetchValue() {
-    if (!isPollingActive) return;
-    try {
-      const newValue = $liveData.last_second_count;
-      history = [...history, newValue].slice(-MAX_POINTS);
-      updateChart();
-    } catch (err) {
-      if (isPollingActive) {
-        isPollingActive = false;
-        if (intervalId) clearInterval(intervalId);
-        error.set('Failed to fetch data');
-      }
-    }
-  }
 
   function updateChart() {
     if (!chart) return;
-    const labels = history.map((_, i) => `${-MAX_POINTS + i + 1}s`);
+    const plainHistory = $state.snapshot(history);
+    const labels = plainHistory.map((_, i) => `${-MAX_POINTS + i + 1}s`);
     chart.data.labels = labels;
-    chart.data.datasets[0].data = history;
+    chart.data.datasets[0].data = plainHistory;
     chart.update('none');
   }
 
@@ -59,32 +43,25 @@
     });
   }
 
-  function retry() {
-    isPollingActive = true;
-    error.set(null);
-    if (intervalId) clearInterval(intervalId);
-    fetchValue();
-    intervalId = setInterval(fetchValue, 1000);
-  }
+  $effect(() => {
+    if ($liveData) {
+      const newValue = $liveData.last_second_count;
+      history = [...history, newValue].slice(-MAX_POINTS);
+      if (!chart) {
+        initChart();
+      } else {
+        updateChart();
+      }
+    }
+  });
 
   onMount(() => {
     history = Array(MAX_POINTS).fill(0);
     initChart();
-    fetchValue();
-    intervalId = setInterval(fetchValue, 1000);
-
     return () => {
-      if (intervalId) clearInterval(intervalId);
       if (chart) chart.destroy();
     };
   });
 </script>
 
-{#if $error}
-  <div class="bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded">
-    <strong>Error:</strong> {$error}
-    <button onclick={retry} class="ml-4 underline">Retry</button>
-  </div>
-{:else}
-  <canvas bind:this={canvas}></canvas>
-{/if}
+<canvas bind:this={canvas}></canvas>

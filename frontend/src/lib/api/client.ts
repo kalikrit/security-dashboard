@@ -121,11 +121,19 @@ export async function fetchIncidents(page: number = 1, limit: number = 20): Prom
   return safeFetch(`${API_BASE}/incidents/list?page=${page}&limit=${limit}`, 'incidents', []);
 }
 
+// export async function fetchLiveStats(): Promise<LiveStatsData> {
+//   return safeFetch(`${API_BASE}/incidents/live-stats`, 'live-stats', {
+//     last_second_count: 0,
+//     last_minute_count: 0,
+//     top_types: {},
+//     severity_counts: { high: 0, medium: 0, low: 0 }
+//   }); 
+// }
+
 export async function fetchLiveStats(): Promise<LiveStatsData> {
-  return safeFetch(`${API_BASE}/incidents/live-stats`, 'live-stats', {
-    last_second_count: 0,
-    last_minute_count: 0,
-    top_types: {},
-    severity_counts: { high: 0, medium: 0, low: 0 }
-  }); 
+  const response = await fetch(`${API_BASE}/incidents/live-stats`);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
 }
